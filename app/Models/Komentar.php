@@ -11,6 +11,8 @@ class Komentar extends Model
 
     protected $fillable = [
         'komentar',
+        'izin_id',
+        'user_id',
     ];
 
     public function izin()

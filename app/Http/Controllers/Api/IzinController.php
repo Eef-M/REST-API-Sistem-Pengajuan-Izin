@@ -7,6 +7,7 @@ use App\Http\Resources\IzinResource;
 use App\Models\Izin;
 use App\Http\Requests\StoreIzinRequest;
 use App\Http\Requests\UpdateIzinRequest;
+use App\Models\Komentar;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +16,9 @@ class IzinController extends Controller
 {
     public function index()
     {
-        return IzinResource::make(true, "Data Izin", Izin::all());
+        $izins = Izin::with("komentar")->get();
+
+        return IzinResource::make(true, "Data Izin", $izins);
     }
 
     public function store(StoreIzinRequest $request)
@@ -98,7 +101,7 @@ class IzinController extends Controller
         try {
             $user = Auth::user();
 
-            $data = Izin::where("user_id", $user->id)->get();
+            $data = Izin::where("user_id", $user->id)->with("komentar")->get();
 
             if ($data->isEmpty()) {
                 return IzinResource::make(false, "Belum pernah mengajukan izin", $data);
@@ -143,7 +146,8 @@ class IzinController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                "status" => "required|in:pending,approved,rejected,cancel"
+                "status" => "required|in:pending,approved,rejected,cancel",
+                "komentar" => "nullable"
             ]);
 
             if ($validator->fails()) {
@@ -168,6 +172,14 @@ class IzinController extends Controller
             $izin->update([
                 "status" => $request->status
             ]);
+
+            if ($request->has("komentar")) {
+                $komentar = new Komentar();
+                $komentar->izin_id = $izin->id;
+                $komentar->user_id = auth()->user()->id;
+                $komentar->komentar = $request->input("komentar");
+                $komentar->save();
+            }
 
             return IzinResource::make(true, "Status berhasil di ubah", $izin);
 
