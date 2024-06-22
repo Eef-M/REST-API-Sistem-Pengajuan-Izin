@@ -34,30 +34,55 @@ class IzinController extends Controller
         }
     }
 
-    public function show(Izin $izin)
-    {
-        return IzinResource::make($izin);
-    }
-
-    public function update(UpdateIzinRequest $request, Izin $izin)
+    public function update(Request $request, $id)
     {
         try {
-            $izin->update($request->validated());
+            $izin = Izin::find($id);
+
+            $validator = Validator::make($request->all(), [
+                "judul" => "required",
+                "isi" => "required",
+                "detail" => "required",
+                "jenis" => "required|in:cuti,liburan,sakit,lainnya"
+            ]);
+
+            if ($validator->fails()) {
+                return (IzinResource::make(false, "Validation Error", null))->response()->setStatusCode(400);
+            }
+
+            if (!$izin) {
+                return (IzinResource::make(false, "Data tidak ditemukan", null))->response()->setStatusCode(404);
+            }
+
+            if ($izin->user_id != auth()->user()->id) {
+                return (IzinResource::make(false, "Akses ditolak.", null))->response()->setStatusCode(401);
+            }
+
+            $izin->update([
+                "judul" => $request->judul,
+                "isi" => $request->isi,
+                "detail" => $request->detail,
+                "jenis" => $request->jenis
+            ]);
 
             return IzinResource::make(true, "Izin berhasil di update", $izin);
         } catch (\Throwable $th) {
-            return IzinResource::make(false, $th->getMessage(), null);
+            return (IzinResource::make(false, $th->getMessage(), null))->response()->setStatusCode(500);
         }
     }
 
-    public function destroy(Izin $izin)
+    public function destroy(Request $request, $id)
     {
         try {
+
+            $izin = Izin::find($id);
+
+            if (!$izin) {
+                return (IzinResource::make(true, "Data tidak ditemukan", null))->response()->setStatusCode(404);
+            }
+
             if ($izin->user_id != auth()->user()->id) {
-                return response()->json([
-                    "status" => false,
-                    "message" => "Akses ditolak!"
-                ], 400);
+                return (IzinResource::make(true, "Akses ditolak", null))->response()->setStatusCode(400);
             }
 
             $izin->delete();

@@ -12,24 +12,25 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, "login"]);
 });
 
-Route::group([
-    "middleware" => ["auth:sanctum"]
-], function () {
-    Route::get("profile", [AuthController::class, "profile"]);
+Route::middleware(["auth:sanctum"])->group(function () {
     Route::get("logout", [AuthController::class, "logout"]);
+
+    // Admin
+    Route::get("users", [UserController::class, "index"])->middleware("admin");
+    Route::post("users", [UserController::class, "store"])->middleware("admin");
+    Route::put("users/update-user-status/{id}", [UserController::class, "updateUserStatus"])->middleware("admin");
+    Route::put("users/reset-user-password/{id}", [UserController::class, "resetPasswordByAdmin"])->middleware("admin");
+    Route::get("izin", [IzinController::class, "index"])->middleware("admin");
+
+    // Verifikator
+    Route::put("users/verif-user/{id}", [UserController::class, "verifUser"])->middleware("verifikator");
+    Route::put("status-izin/{id}", [IzinController::class, "izinStatus"])->middleware("verifikator");
+
+    // Ordinary User
+    Route::post("izin", [IzinController::class, "store"])->middleware("ordinary_user");
+    Route::put("izin/{id}", [IzinController::class, "update"])->middleware("ordinary_user");
+    Route::delete("izin/{id}", [IzinController::class, "destroy"])->middleware("ordinary_user");
+    Route::post("users/update-password", [UserController::class, "updateUserPassword"])->middleware("ordinary_user");
+    Route::get("data-izin", [IzinController::class, "showDataByLoginUser"])->middleware("ordinary_user");
+    Route::get("cancel-izin/{id}", [IzinController::class, "cancelIzin"])->middleware("ordinary_user");
 });
-
-Route::apiResource("users", UserController::class);
-Route::put("users/update-user-role/{id}", [UserController::class, "updateUserStatus"]);
-Route::put("users/reset-user-password/{id}", [UserController::class, "resetPasswordByAdmin"]);
-Route::post("users/update-password", [UserController::class, "updateUserPassword"])->middleware("auth:sanctum");
-Route::put("users/verif-user/{id}", [UserController::class, "verifUser"])->middleware("auth:sanctum");
-
-Route::apiResource("izin", IzinController::class)->middleware("auth:sanctum");
-Route::get("data-izin", [IzinController::class, "showDataByLoginUser"])->middleware("auth:sanctum");
-Route::get("cancel-izin/{id}", [IzinController::class, "cancelIzin"])->middleware("auth:sanctum");
-Route::put("status-izin/{id}", [IzinController::class, "izinStatus"])->middleware("auth:sanctum");
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');

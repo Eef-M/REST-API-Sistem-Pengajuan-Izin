@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+
     public function index()
     {
         $users = User::where('status', '!=', 'admin')->get();
@@ -71,16 +72,20 @@ class UserController extends Controller
                 return (UserResource::make(false, "user tidak ditemukan", null))->response()->setStatusCode(404);
             }
 
-            $prohibitedFields = ['nama_lengkap', 'email', 'password', 'status'];
+            if ($user->verif === 0) {
+                return (UserResource::make(false, "user belum terverifikasi", null))->response()->setStatusCode(400);
+            }
+
+            $prohibitedFields = ['nama_lengkap', 'email', 'password', 'verif'];
 
             foreach ($prohibitedFields as $field) {
                 if ($request->has($field)) {
-                    return (UserResource::make(false, $field . " tidak diperbolehkan", null))->response()->setStatusCode(404);
+                    return (UserResource::make(false, $field . " tidak diperbolehkan", null))->response()->setStatusCode(400);
                 }
             }
 
             $user->update([
-                "status" => $request->status,
+                "status" => $request->input("status")
             ]);
 
             return UserResource::make(true, "status berhasil diupdate!", $user);
@@ -178,6 +183,10 @@ class UserController extends Controller
 
             if ($user->status === "admin") {
                 return (UserResource::make(false, "Akses di tolak. Admin tidak bisa di ubah verifikasi akun", null))->response()->setStatusCode(400);
+            }
+
+            if ($user->verif === 1) {
+                return (UserResource::make(false, "User sudah terverifikasi", null))->response()->setStatusCode(400);
             }
 
             $user->update([

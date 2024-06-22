@@ -55,6 +55,15 @@ class AuthController extends Controller
                 "password" => "required"
             ]);
 
+            $user = User::where("email", $request->email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Belum Terdaftar!"
+                ], 401);
+            }
+
             if ($validateUser->fails()) {
                 return response()->json([
                     "status" => false,
@@ -69,8 +78,6 @@ class AuthController extends Controller
                     "message" => "Email atau Password Salah"
                 ], 401);
             }
-
-            $user = User::where("email", $request->email)->first();
 
             $userStatus = $user->verif;
 
