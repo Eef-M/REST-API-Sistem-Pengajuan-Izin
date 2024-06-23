@@ -41,6 +41,7 @@ class UserController extends Controller
                 "email" => $request->email,
                 "password" => $request->password,
                 "status" => "verifikator",
+                "verif" => 1
             ]);
 
             return (UserResource::make(true, "Berhasil menambahkan verifikator", $user))->response()->setStatusCode(201);
